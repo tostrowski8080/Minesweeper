@@ -48,7 +48,7 @@ public class Board {
                         else
                             System.out.print(".  ");
                     } else {
-                        System.out.print("*  ");
+                        System.out.print("* ");
                     }
                 } else {
                     if (cell.isFlagged()) System.out.print("F  ");
@@ -126,6 +126,7 @@ public class Board {
 
     public boolean checkWin() {
         for (Cell c : board.values()) {
+            if (c.isMine() && c.isRevealed()) return false;
             if (!c.isMine() && !c.isRevealed()) return false;
         }
         return true;

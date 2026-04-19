@@ -3,45 +3,32 @@ import java.util.*;
 public class Game {
     public final Board board = new Board();
 
-    private boolean playing;
-    public boolean isPlaying(){
-        return playing;
+    public enum ShapeOption {
+        RECTANGLE, CROSS, Z, CIRCLE, RING
     }
+
+    private boolean playing;
+    public boolean isPlaying(){ return playing; }
 
     private boolean firstMove;
-
     private int bombCount;
-    public int getBombCount(){
-        return bombCount;
-    }
+    public int getBombCount(){ return bombCount; }
 
     private int cellCount;
-    public int getCellCount(){
-        return cellCount; // ✅ fixed
-    }
+    public int getCellCount(){ return cellCount; }
 
     private int flagCount;
-    public int getFlagCount(){
-        return flagCount; // ✅ fixed
-    }
+    public int getFlagCount(){ return flagCount; }
 
-    private Main.ShapeOption boardShape;
-    public void setShape(Main.ShapeOption shape){
-        boardShape = shape;
-    }
-    public Main.ShapeOption getShape(){
-        return boardShape;
-    }
+    private ShapeOption boardShape;
+    public void setShape(ShapeOption shape){ boardShape = shape; }
+    public ShapeOption getShape(){ return boardShape; }
 
     private double bombRatio;
-    public void setBombRatio(double Ratio){
-        bombRatio = Ratio;
-    }
-    public double getBombRatio(){
-        return bombRatio;
-    }
+    public void setBombRatio(double Ratio){ bombRatio = Ratio; }
+    public double getBombRatio(){ return bombRatio; }
 
-    public void generateBoard(int cols, int rows, double ratio, Main.ShapeOption shape){
+    public void generateBoard(int cols, int rows, double ratio, ShapeOption shape){
         if (ratio > 1 || ratio < 0) return;
 
         playing = true;
@@ -77,8 +64,15 @@ public class Game {
     }
 
     private void generateCross(int cols, int rows){
-        for (int col = 1; col <= cols; col++) {
+        for (int col = cols/4 + 1; col <= cols * 3/4; col++) {
             for (int row = 1; row <= rows/4; row++) {
+                board.setPoint(new Point(col, row), new Cell());
+                cellCount++;
+            }
+        }
+
+        for (int col = 1; col <= cols; col++) {
+            for (int row = rows/4; row <= rows/2; row++) {
                 board.setPoint(new Point(col, row), new Cell());
                 cellCount++;
             }
@@ -186,17 +180,10 @@ public class Game {
     }
 
     public void setFlag(Point point){
+        if (!playing) return;
+
         Cell targetCell = board.getCell(point);
-
-        if (targetCell == null) {
-            System.out.println("Invalid point!");
-            return;
-        }
-
-        if (targetCell.isRevealed()){
-            System.out.println("Cell is already revealed.");
-            return;
-        }
+        if (targetCell == null || targetCell.isRevealed()) return;
 
         if (!targetCell.isFlagged()) {
             targetCell.setFlagged(true);
@@ -205,23 +192,13 @@ public class Game {
             targetCell.setFlagged(false);
             flagCount--;
         }
-
-        System.out.println("Flags: " + flagCount + " / " + bombCount);
-        board.drawBoard();
     }
 
-    public void check(Point point, Boolean draw) {
+    public void check(Point point) {
+        if (!playing) return;
+
         Cell targetCell = board.getCell(point);
-
-        if (targetCell == null) {
-            System.out.println("Invalid point!");
-            return;
-        }
-
-        if (targetCell.isFlagged()) {
-            System.out.println("Can't reveal a flagged cell. Remove flag first.");
-            return;
-        }
+        if (targetCell == null || targetCell.isFlagged()) return;
 
         if (firstMove){
             firstMove = false;
@@ -230,7 +207,6 @@ public class Game {
 
         if (!targetCell.isRevealed()) {
             if (targetCell.isMine()) {
-                System.out.println("Mine! Game over!");
                 gameOver();
                 return;
             }
@@ -258,22 +234,14 @@ public class Game {
             if (localFlagCount == targetCell.getAdjMines()) {
                 for (Point p : neighbours) {
                     if (!board.getCell(p).isRevealed()) {
-                        check(p, false);
+                        check(p);
                         if (!isPlaying()) return;
                     }
                 }
-            } else {
-                System.out.println("Point already revealed!");
             }
         }
 
-        System.out.println("Flags: " + flagCount + " / " + bombCount);
-
-        if (draw) board.drawBoard();
-
         if (board.checkWin()) {
-            if (!draw) board.drawBoard();
-            System.out.println("Congratulations! You won!");
             gameWon();
         }
     }
@@ -293,6 +261,8 @@ public class Game {
     }
 
     public void stuck() {
+        if (!playing) return;
+
         List<Point> candidates = new ArrayList<>();
 
         for (Point p : board.getAllPoints()) {
@@ -314,18 +284,12 @@ public class Game {
         if (!candidates.isEmpty()) {
             Collections.shuffle(candidates);
             Point target = candidates.get(0);
-
-            System.out.println("Flagged at " + target.col + " " + target.row);
-
             setFlag(target);
-        } else {
-            System.out.println("No bombs found");
         }
     }
 
     public void gameOver(){
         board.revealAll();
-        board.drawBoard();
         playing = false;
     }
 
